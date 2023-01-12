@@ -62,7 +62,7 @@ void setup()
 void loop()
 {
   // if Serial1 Available
-  if (Serial1.available() >= 8)
+  if (Serial1.available() >= 1)
   {
     // temp array for 8 bytes
     byte temp[8];
@@ -74,6 +74,10 @@ void loop()
     {
       /* code */
       temp[i] = Serial1.read();
+      if ((char)temp[0] != 'S')
+      {
+        break;
+      }
     }
     if ((char)temp[0] == 'S')
     {
@@ -90,10 +94,9 @@ void loop()
       Serial.println(data.ch[1]);
       Serial.println(data.ch[2]);
     }
-    else
-      //purge the buffer
-      Serial1.flush();
-    
+    // else
+      // purge the buffer
+      // Serial1.flush();
   }
   static unsigned long previousMillis = 0;
   // save the current time
@@ -109,9 +112,9 @@ void loop()
     sbus_tx.Write();
   }
 
-    // Zoom Control
+  // Zoom Control
 
-      static int ZoomPWMVal = 2200;
+  static int ZoomPWMVal = 2200;
   // If the desired zoom value is differnt from the current zoom value slowly change the zoom value until they match
   // Only Check the zoom value every 500ms
   static unsigned long previousMillisZoom = 0;

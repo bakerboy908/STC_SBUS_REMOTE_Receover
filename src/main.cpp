@@ -38,6 +38,7 @@ int ZoomPWMValDesired = 2200;
 
 void setup()
 {
+  delay(3000);
   Serial.begin(115200);
   // put your setup code here, to run once:
   sbus_tx.Begin();
@@ -58,7 +59,24 @@ void setup()
   // Setup Complete
   Serial.println("Setup Complete");
 }
+void ChangeChannel(int Channel)
+{
+  // Put HC-12 in to command mode
+  digitalWrite(HC_12_SETPIN, LOW);
+  delay(100);
+  // Send command to change channel with extra leading zeros before channel number
+  Serial1.print("AT+C");
+  Serial1.print("0");
+  Serial1.print("0");
+  Serial1.println(Channel);
+  
+  // Wait for response
+  delay(100);
+  // Put HC-12 back in to normal mode
+  digitalWrite(HC_12_SETPIN, HIGH);
+  delay(100);
 
+}
 void loop()
 {
   // if Serial1 Available
@@ -70,15 +88,51 @@ void loop()
     Serial.println("Receiving Packet");
     // delay(1000);
     // Serial1.readBytes(temp, sizeof(temp));
-    for (auto i = 0; i < 8; i++)
+    //Read one serial byte looking for start code S or C
+    temp[0] = Serial1.read();
+    Serial.println((char)temp[0]);
+    // if (temp[0] == 'S' || temp[0] == 'C')
+    // {
+    //   //do nothing
+    // }
+    if (temp[0] == 'S')
     {
-      /* code */
-      temp[i] = Serial1.read();
-      if ((char)temp[0] != 'S')
-      {
-        break;
-      }
+      //Read the rest of the packet
+      Serial1.readBytes(temp + 1, sizeof(temp) - 1);
     }
+    else if (temp[0] == 'C')
+    {
+      while (Serial1.available() == 0)
+      {
+        /* code */
+      }
+      
+      //Read the rest of the packet
+       byte NewChannel_Char = Serial1.read();
+      Serial.print("Changing Channel to: ");
+      Serial.println((char)NewChannel_Char);
+       // respond with the neq channel number
+        Serial1.print((char)NewChannel_Char);
+        // Change the channel
+        ChangeChannel(NewChannel_Char);
+
+    }
+    else
+    {
+      //Purge the buffer
+      Serial1.flush();
+    }
+
+    
+    // for (auto i = 0; i < 8; i++)
+    // {
+    //   /* code */
+    //   temp[i] = Serial1.read();
+    //   if ((char)temp[0] != 'S')
+    //   {
+    //     break;
+    //   }
+    // }
     if ((char)temp[0] == 'S')
     {
       /* code */

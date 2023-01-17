@@ -90,8 +90,24 @@ void loop()
     // delay(1000);
     // Serial1.readBytes(temp, sizeof(temp));
     // Read one serial byte looking for start code S or C
-    Serial1.readBytes(temp, 5);
-    Serial.println((char)temp[0]);
+    while ((char)temp[0] != 'S' && (char)temp[1] != 'T')
+    {
+      temp[0] = Serial1.read();
+      temp[1] = Serial1.read();
+    }
+    
+      temp[2] = Serial1.read();
+      temp[3] = Serial1.read();
+      temp[4] = Serial1.read();
+    
+    Serial.println("Printing Start Bits");
+    Serial.print((char)temp[0]);
+    Serial.print((char)temp[1]);
+    Serial.print((char)temp[2]);
+    Serial.print((char)temp[3]);
+    Serial.println((char)temp[4]);
+    Serial.println("End Start Bits");
+ 
     // if (temp[0] == 'S' || temp[0] == 'C')
     // {
     //   //do nothing
@@ -99,7 +115,8 @@ void loop()
     if (temp[0] == 'S' && temp[1] == 'T' && temp[2] == 'A' && temp[3] == 'R' && temp[4] == 'T')
     {
       // Read the rest of the packet
-      Serial1.readBytes(temp + 1, 6);
+      Serial1.readBytes(temp + 5, 6);
+      Serial.println("Start Condition Found");
     }
     else if (temp[0] == 'C' &&
              temp[1] == 'H' &&
@@ -147,10 +164,10 @@ void loop()
       data.ch[2] = temp[5] + (temp[6] << 8);
       // print the data
 
-      Serial.println("Packet Received");
-      Serial.println(data.ch[0]);
-      Serial.println(data.ch[1]);
-      Serial.println(data.ch[2]);
+      // Serial.println("Packet Received");
+      // Serial.println(data.ch[0]);
+      // Serial.println(data.ch[1]);
+      // Serial.println(data.ch[2]);
     }
     // else
     // purge the buffer
@@ -196,6 +213,7 @@ void loop()
       }
       // Update the servo PWM value
       analogWrite(SERVO_PWM_PIN, ZoomPWMVal);
+      Serial.println("Analog Write");
     }
   }
 }

@@ -69,61 +69,65 @@ void ChangeChannel(int Channel)
   Serial1.print("0");
   Serial1.print("0");
   Serial1.println(Channel);
-  
+
   // Wait for response
   delay(100);
   // Put HC-12 back in to normal mode
   digitalWrite(HC_12_SETPIN, HIGH);
   delay(100);
-
 }
+
+
 void loop()
 {
   // if Serial1 Available
   if (Serial1.available() >= 1)
   {
     // temp array for 8 bytes
-    byte temp[8];
+    byte temp[16];
     // read 8 bytes from Serial1
     Serial.println("Receiving Packet");
     // delay(1000);
     // Serial1.readBytes(temp, sizeof(temp));
-    //Read one serial byte looking for start code S or C
-    temp[0] = Serial1.read();
+    // Read one serial byte looking for start code S or C
+    Serial1.readBytes(temp, 5);
     Serial.println((char)temp[0]);
     // if (temp[0] == 'S' || temp[0] == 'C')
     // {
     //   //do nothing
     // }
-    if (temp[0] == 'S')
+    if (temp[0] == 'S' && temp[1] == 'T' && temp[2] == 'A' && temp[3] == 'R' && temp[4] == 'T')
     {
-      //Read the rest of the packet
-      Serial1.readBytes(temp + 1, sizeof(temp) - 1);
+      // Read the rest of the packet
+      Serial1.readBytes(temp + 1, 6);
     }
-    else if (temp[0] == 'C')
+    else if (temp[0] == 'C' &&
+             temp[1] == 'H' &&
+             temp[2] == 'A' &&
+             temp[3] == 'N' &&
+             temp[4] == 'G' &&
+             temp[5] == 'E')
     {
       while (Serial1.available() == 0)
       {
         /* code */
       }
-      
-      //Read the rest of the packet
-       byte NewChannel_Char = Serial1.read();
+
+      // Read the rest of the packet
+      byte NewChannel_Char = Serial1.read();
       Serial.print("Changing Channel to: ");
       Serial.println((char)NewChannel_Char);
-       // respond with the neq channel number
-        Serial1.print((char)NewChannel_Char);
-        // Change the channel
-        ChangeChannel(NewChannel_Char);
-
+      // respond with the neq channel number
+      Serial1.print((char)NewChannel_Char);
+      // Change the channel
+      ChangeChannel(NewChannel_Char);
     }
     else
     {
-      //Purge the buffer
+      // Purge the buffer
       Serial1.flush();
     }
 
-    
     // for (auto i = 0; i < 8; i++)
     // {
     //   /* code */
@@ -149,8 +153,8 @@ void loop()
       Serial.println(data.ch[2]);
     }
     // else
-      // purge the buffer
-      // Serial1.flush();
+    // purge the buffer
+    // Serial1.flush();
   }
   static unsigned long previousMillis = 0;
   // save the current time

@@ -86,27 +86,66 @@ void loop()
     // temp array for 8 bytes
     byte temp[16];
     // read 8 bytes from Serial1
-    Serial.println("Receiving Packet");
+    // Serial.println("Receiving Packet");
     // delay(1000);
     // Serial1.readBytes(temp, sizeof(temp));
-    // Read one serial byte looking for start code S or C
-    while ((char)temp[0] != 'S' && (char)temp[1] != 'T')
+    //Create a sliding window reading serial bits in, until we find the start code
+    bool searching = true;
+  int startcount = 0;
+    while (searching)
     {
-      temp[0] = Serial1.read();
-      temp[1] = Serial1.read();
+      // delay(10);
+      // for loop to move data down one slot in temp array
+      for (auto i = 0; i < 5; i++)
+      {
+        temp[i] = temp[i + 1];
+      }
+      // read one byte from serial into back of temp array
+      temp[4] = Serial1.read();
+      // print out the temp array
+      startcount++;
+      // Serial.print("Start Count: ");
+      // Serial.println(startcount);
+      //print number of bytes in serial1 buffer
+      // Serial.print("Num of Elemement in buffer: ");
+      // Serial.println(Serial1.available());
+      
+      // Serial.print(" Temp Array: ");
+      // for (auto i = 0; i < 6; i++)
+      // {
+      //   Serial.print((char)temp[i]);
+      // }
+      // Serial.println();
+      // check if start code found
+      if (temp[0] == 'S' && temp[1] == 'T' && temp[2] == 'A' && temp[3] == 'R' && temp[4] == 'T')
+      {
+        // if start code found, break out of while loop
+        searching = false;
+        Serial.println("                                                    Start Code Found");
+      }
+      // check for chang channel code
+      if (temp[0] == 'C' &&
+          temp[1] == 'H' &&
+          temp[2] == 'A' &&
+          temp[3] == 'N' &&
+          temp[4] == 'G' )
+      {
+        // if start code found, break out of while loop
+        searching = false;
+        Serial.println("Change Channel Code Found");
+      }
+      if (Serial1.available() <= 10 )
+      {
+        searching = false;
+        // Serial.println("Start Code Not Found");
+      }
+      {
+        /* code */
+      }
+      
     }
     
-      temp[2] = Serial1.read();
-      temp[3] = Serial1.read();
-      temp[4] = Serial1.read();
     
-    Serial.println("Printing Start Bits");
-    Serial.print((char)temp[0]);
-    Serial.print((char)temp[1]);
-    Serial.print((char)temp[2]);
-    Serial.print((char)temp[3]);
-    Serial.println((char)temp[4]);
-    Serial.println("End Start Bits");
  
     // if (temp[0] == 'S' || temp[0] == 'C')
     // {
@@ -158,10 +197,10 @@ void loop()
     {
       /* code */
       // reconstrct the first 3 channels in data from temp array
-      data.ch[0] = temp[1] + (temp[2] << 8);
+      data.ch[0] = temp[5] + (temp[6] << 8);
       ZoomPWMValDesired = data.ch[0];
-      data.ch[1] = temp[3] + (temp[4] << 8);
-      data.ch[2] = temp[5] + (temp[6] << 8);
+      data.ch[1] = temp[7] + (temp[8] << 8);
+      data.ch[2] = temp[9] + (temp[10] << 8);
       // print the data
 
       // Serial.println("Packet Received");
@@ -213,7 +252,6 @@ void loop()
       }
       // Update the servo PWM value
       analogWrite(SERVO_PWM_PIN, ZoomPWMVal);
-      Serial.println("Analog Write");
     }
   }
 }

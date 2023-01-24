@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "sbus.h"
+#include <EEPROM.h>
 /* SBUS object, writing SBUS */
 bfs::SbusTx sbus_tx(&Serial2);
 /* SBUS data */
@@ -33,22 +34,36 @@ int16_t Zoom30Val = 3624;
 int16_t Zoom35Val = 3975;
 int16_t Zoom40Val = 4400;
 #endif
+#define ZoomEEPROMAddress 0
 
-int ZoomPWMValDesired = 2200;
-
+int16_t ZoomPWMValDesired = 4400;
+int16_t ZoomPWMValDesiredOLD;
+long messageCount = 0;
+int ZoomPWMVal = 2200;
 void setup()
 {
-  delay(3000);
+  
+
   Serial.begin(115200);
+  Serial.println("SYSTEM STARTING");
+  delay(1000);
+  ZoomPWMValDesired = EEPROM.read(ZoomEEPROMAddress) | (EEPROM.read(ZoomEEPROMAddress + 1) << 8);
+
+  ZoomPWMValDesiredOLD = ZoomPWMValDesired;
+  ZoomPWMVal = ZoomPWMValDesired;
+  Serial.println("EEPROM Read");
+  Serial.println(ZoomPWMValDesired);
   // put your setup code here, to run once:
   sbus_tx.Begin();
   Serial.println("SBUS RX/TX started");
   pinMode(SERVO_PWM_PIN, OUTPUT);
+  analogWrite(SERVO_PWM_PIN, ZoomPWMValDesired);
+  delay(1000);
   pinMode(HC_12_SETPIN, OUTPUT);
   digitalWrite(HC_12_SETPIN, HIGH);
 
   // Set the PWM frequency to 50Hz
-  analogWriteFrequency(SERVO_PWM_PIN, 66);
+  analogWriteFrequency(SERVO_PWM_PIN, 50);
 #ifdef PWM_16_BIT
   // set PWM resolution to 15 bits
   analogWriteResolution(15);
@@ -102,13 +117,15 @@ void loop()
       // read one byte from serial into back of temp array
       temp[4] = Serial1.read();
       // print out the temp array
-      startcount++;
+      // ++;
 
       if (temp[0] == 'S' && temp[1] == 'T' && temp[2] == 'A' && temp[3] == 'R' && temp[4] == 'T')
       {
         // if start code found, break out of while loop
         searching = false;
-        Serial.println("                                                    Start Code Found");
+        messageCount++;
+        Serial.print("Start Condition Found: ");
+        Serial.print(messageCount);
       }
       // check for chang channel code
       if (temp[0] == 'C' &&
@@ -131,7 +148,7 @@ void loop()
     {
       // Read the rest of the packet
       Serial1.readBytes(temp + 5, 6);
-      Serial.println("Start Condition Found");
+      // Serial.println("Start Condition Found");
     }
     else if (temp[0] == 'C' &&
              temp[1] == 'H' &&
@@ -175,17 +192,42 @@ void loop()
       // Serial.println(data.ch[0]);
       // Serial.println(data.ch[1]);
       // Serial.println(data.ch[2]);
+      Serial.print(" ZoomPWMValDesired: ");
+      Serial.println(ZoomPWMValDesired);
+      if (ZoomPWMValDesired == Zoom12Val ||
+          ZoomPWMValDesired == Zoom14Val ||
+          ZoomPWMValDesired == Zoom15Val ||
+          ZoomPWMValDesired == Zoom18Val ||
+          ZoomPWMValDesired == Zoom25Val ||
+          ZoomPWMValDesired == Zoom35Val ||
+          ZoomPWMValDesired == Zoom40Val)
+      {
+        if (ZoomPWMValDesired != ZoomPWMValDesiredOLD)
+        {
+          EEPROM.write(ZoomEEPROMAddress, ZoomPWMValDesired & 0xFF);
+          EEPROM.write(ZoomEEPROMAddress + 1, ZoomPWMValDesired >> 8);
+          ZoomPWMValDesiredOLD = ZoomPWMValDesired;
+          Serial.println("Zoom Value Saved");
+        }
+        
 
-      if (ZoomPWMValDesired != Zoom12Val ||
-          ZoomPWMValDesired != Zoom14Val ||
-          ZoomPWMValDesired != Zoom15Val ||
-          ZoomPWMValDesired != Zoom18Val ||
-          ZoomPWMValDesired != Zoom25Val ||
-          ZoomPWMValDesired != Zoom35Val ||
-          ZoomPWMValDesired != Zoom40Val)
+      }
+      else
       {
         ZoomPWMValDesired = oldZoomPWMValDesired;
+        Serial.println("Invalid Zoom Value");
       }
+
+      Serial1.print("START");
+      Serial1.write(data.ch[0] & 0xFF);
+      Serial1.write(data.ch[0] >> 8);
+
+      Serial1.write(data.ch[1] & 0xFF);
+      Serial1.write(data.ch[1] >> 8);
+
+      Serial1.write(data.ch[2] & 0xFF);
+      Serial1.write(data.ch[2] >> 8);
+      Serial1.print("END");
     }
     // else
     // purge the buffer
@@ -208,8 +250,6 @@ void loop()
 
   // Zoom Control
 
-  static int ZoomPWMVal = 2200;
-
   // If the desired zoom value is differnt from the current zoom value slowly change the zoom value until they match
   // Only Check the zoom value every 500ms
   static unsigned long previousMillisZoom = 0;
@@ -218,11 +258,13 @@ void loop()
   // if 500ms have passed since the last time the loop ran
   if (currentMillisZoom - previousMillisZoom > 2)
   {
+    // Serial.println("Milis 1");
     // save the last time the loop ran
     previousMillisZoom = currentMillisZoom;
     // Check the zoom value
     if (ZoomPWMValDesired != ZoomPWMVal)
     {
+      // Serial.println("Zoom desiered != Zoom");
       if (ZoomPWMValDesired > ZoomPWMVal)
       {
         ZoomPWMVal++;

@@ -77,7 +77,6 @@ void ChangeChannel(int Channel)
   delay(100);
 }
 
-
 void loop()
 {
   // if Serial1 Available
@@ -89,9 +88,9 @@ void loop()
     // Serial.println("Receiving Packet");
     // delay(1000);
     // Serial1.readBytes(temp, sizeof(temp));
-    //Create a sliding window reading serial bits in, until we find the start code
+    // Create a sliding window reading serial bits in, until we find the start code
     bool searching = true;
-  int startcount = 0;
+    int startcount = 0;
     while (searching)
     {
       // delay(10);
@@ -104,19 +103,7 @@ void loop()
       temp[4] = Serial1.read();
       // print out the temp array
       startcount++;
-      // Serial.print("Start Count: ");
-      // Serial.println(startcount);
-      //print number of bytes in serial1 buffer
-      // Serial.print("Num of Elemement in buffer: ");
-      // Serial.println(Serial1.available());
-      
-      // Serial.print(" Temp Array: ");
-      // for (auto i = 0; i < 6; i++)
-      // {
-      //   Serial.print((char)temp[i]);
-      // }
-      // Serial.println();
-      // check if start code found
+
       if (temp[0] == 'S' && temp[1] == 'T' && temp[2] == 'A' && temp[3] == 'R' && temp[4] == 'T')
       {
         // if start code found, break out of while loop
@@ -128,29 +115,18 @@ void loop()
           temp[1] == 'H' &&
           temp[2] == 'A' &&
           temp[3] == 'N' &&
-          temp[4] == 'G' )
+          temp[4] == 'G')
       {
         // if start code found, break out of while loop
         searching = false;
         Serial.println("Change Channel Code Found");
       }
-      if (Serial1.available() <= 10 )
+      if (Serial1.available() <= 10)
       {
         searching = false;
-        // Serial.println("Start Code Not Found");
       }
-      {
-        /* code */
-      }
-      
     }
-    
-    
- 
-    // if (temp[0] == 'S' || temp[0] == 'C')
-    // {
-    //   //do nothing
-    // }
+
     if (temp[0] == 'S' && temp[1] == 'T' && temp[2] == 'A' && temp[3] == 'R' && temp[4] == 'T')
     {
       // Read the rest of the packet
@@ -184,18 +160,10 @@ void loop()
       Serial1.flush();
     }
 
-    // for (auto i = 0; i < 8; i++)
-    // {
-    //   /* code */
-    //   temp[i] = Serial1.read();
-    //   if ((char)temp[0] != 'S')
-    //   {
-    //     break;
-    //   }
-    // }
     if ((char)temp[0] == 'S')
     {
-      /* code */
+
+      int oldZoomPWMValDesired = ZoomPWMValDesired;
       // reconstrct the first 3 channels in data from temp array
       data.ch[0] = temp[5] + (temp[6] << 8);
       ZoomPWMValDesired = data.ch[0];
@@ -207,6 +175,17 @@ void loop()
       // Serial.println(data.ch[0]);
       // Serial.println(data.ch[1]);
       // Serial.println(data.ch[2]);
+
+      if (ZoomPWMValDesired != Zoom12Val ||
+          ZoomPWMValDesired != Zoom14Val ||
+          ZoomPWMValDesired != Zoom15Val ||
+          ZoomPWMValDesired != Zoom18Val ||
+          ZoomPWMValDesired != Zoom25Val ||
+          ZoomPWMValDesired != Zoom35Val ||
+          ZoomPWMValDesired != Zoom40Val)
+      {
+        ZoomPWMValDesired = oldZoomPWMValDesired;
+      }
     }
     // else
     // purge the buffer
@@ -215,6 +194,7 @@ void loop()
   static unsigned long previousMillis = 0;
   // save the current time
   unsigned long currentMillis = millis();
+
   // if 15ms have passed since the last time the loop ran
   if (currentMillis - previousMillis >= 15)
   {
@@ -229,13 +209,14 @@ void loop()
   // Zoom Control
 
   static int ZoomPWMVal = 2200;
+
   // If the desired zoom value is differnt from the current zoom value slowly change the zoom value until they match
   // Only Check the zoom value every 500ms
   static unsigned long previousMillisZoom = 0;
   // save the current time
   unsigned long currentMillisZoom = millis();
   // if 500ms have passed since the last time the loop ran
-  if (currentMillisZoom - previousMillisZoom >= 1)
+  if (currentMillisZoom - previousMillisZoom > 2)
   {
     // save the last time the loop ran
     previousMillisZoom = currentMillisZoom;

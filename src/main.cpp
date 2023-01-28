@@ -124,8 +124,8 @@ void loop()
         // if start code found, break out of while loop
         searching = false;
         messageCount++;
-        Serial.print("Start Condition Found: ");
-        Serial.print(messageCount);
+        // Serial.print("Start Condition Found: ");
+        // Serial.print(messageCount);
       }
       // check for chang channel code
       if (temp[0] == 'C' &&

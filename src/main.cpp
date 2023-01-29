@@ -147,7 +147,7 @@ void loop()
     if (temp[0] == 'S' && temp[1] == 'T' && temp[2] == 'A' && temp[3] == 'R' && temp[4] == 'T')
     {
       // Read the rest of the packet
-      Serial1.readBytes(temp + 5, 6);
+      Serial1.readBytes(temp + 5, 8);
       // Serial.println("Start Condition Found");
     }
     else if (temp[0] == 'C' &&
@@ -177,21 +177,47 @@ void loop()
       Serial1.flush();
     }
 
-    if ((char)temp[0] == 'S')
+    if (temp[0] == 'S' && temp[1] == 'T' && temp[2] == 'A' && temp[3] == 'R' && temp[4] == 'T')
     {
 
       int oldZoomPWMValDesired = ZoomPWMValDesired;
+      auto oldDat = data;
       // reconstrct the first 3 channels in data from temp array
       data.ch[0] = temp[5] + (temp[6] << 8);
-      ZoomPWMValDesired = data.ch[0];
       data.ch[1] = temp[7] + (temp[8] << 8);
       data.ch[2] = temp[9] + (temp[10] << 8);
+
+      // Reconstruct the check sum
+      uint16_t checksum = temp[11] + (temp[12] << 8) + (temp[13] << 16) + (temp[14] << 24);
+
+      // Check the checksum
+      if (checksum == data.ch[0] + data.ch[1] + data.ch[2])
+      {
+        // Checksum is good
+        Serial.println("Checksum Good");
+      }
+      else
+      {
+        // Checksum is bad
+        Serial.println("Checksum Bad");
+        data = oldDat;
+      }
+
+
       // print the data
+      ZoomPWMValDesired = data.ch[0];
 
       // Serial.println("Packet Received");
       // Serial.println(data.ch[0]);
       // Serial.println(data.ch[1]);
       // Serial.println(data.ch[2]);
+      if (ZoomPWMValDesired != oldZoomPWMValDesired)
+      {
+        Serial.print("ZoomPWMValDesired: ");
+        Serial.println(ZoomPWMValDesired);
+      
+
+      
       Serial.print(" ZoomPWMValDesired: ");
       Serial.println(ZoomPWMValDesired);
       if (ZoomPWMValDesired == Zoom12Val ||
@@ -199,16 +225,16 @@ void loop()
           ZoomPWMValDesired == Zoom15Val ||
           ZoomPWMValDesired == Zoom18Val ||
           ZoomPWMValDesired == Zoom25Val ||
+          ZoomPWMValDesired == Zoom30Val ||
           ZoomPWMValDesired == Zoom35Val ||
           ZoomPWMValDesired == Zoom40Val)
       {
-        if (ZoomPWMValDesired != ZoomPWMValDesiredOLD)
-        {
+
           EEPROM.write(ZoomEEPROMAddress, ZoomPWMValDesired & 0xFF);
           EEPROM.write(ZoomEEPROMAddress + 1, ZoomPWMValDesired >> 8);
           ZoomPWMValDesiredOLD = ZoomPWMValDesired;
           Serial.println("Zoom Value Saved");
-        }
+
         
 
       }
@@ -216,6 +242,7 @@ void loop()
       {
         ZoomPWMValDesired = oldZoomPWMValDesired;
         Serial.println("Invalid Zoom Value");
+      }
       }
 
       Serial1.print("START");

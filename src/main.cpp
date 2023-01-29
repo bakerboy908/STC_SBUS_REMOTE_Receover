@@ -265,7 +265,7 @@ void loop()
   unsigned long currentMillis = millis();
 
   // if 15ms have passed since the last time the loop ran
-  if (currentMillis - previousMillis >= 15)
+  if (currentMillis - previousMillis >= 20)
   {
     // save the last time the loop ran
     previousMillis = currentMillis;

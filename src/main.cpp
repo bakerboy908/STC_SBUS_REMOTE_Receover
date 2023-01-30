@@ -91,6 +91,7 @@ void ChangeChannel(int Channel)
   delay(100);
 }
 
+    int startcount = 0;
 void loop()
 {
       bool ValidChecksum = false;
@@ -105,7 +106,6 @@ void loop()
     // Serial1.readBytes(temp, sizeof(temp));
     // Create a sliding window reading serial bits in, until we find the start code
     bool searching = true;
-    int startcount = 0;
     while (searching)
     {
       // delay(10);
@@ -250,6 +250,8 @@ void loop()
       Serial1.write(data.ch[2] & 0xFF);
       Serial1.write(data.ch[2] >> 8);
       Serial1.print("END");
+
+      // startcount++;
     }
     // else
     // purge the buffer
@@ -267,6 +269,7 @@ void loop()
     if (ValidChecksum)
     {
       // write the SBUS data
+      Serial.println(data.ch[2]);
       sbus_tx.data(data);
       /* code */
     }

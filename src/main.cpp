@@ -92,9 +92,11 @@ void ChangeChannel(int Channel)
 }
 
     int startcount = 0;
+    uint16_t LastFocusVal = 0;
+    uint16_t LastZooomVal = 0;
 void loop()
 {
-      bool ValidChecksum = false;
+      bool ValidChecksum = true;
   // if Serial1 Available
   if (Serial1.available() >= 1)
   {
@@ -183,10 +185,19 @@ void loop()
       int oldZoomPWMValDesired = ZoomPWMValDesired;
       auto oldDat = data;
       // reconstrct the first 3 channels in data from temp array
-      data.ch[0] = temp[5] + (temp[6] << 8);
+      ZoomPWMValDesired = temp[5] + (temp[6] << 8);
       data.ch[1] = temp[7] + (temp[8] << 8);
       data.ch[2] = temp[9] + (temp[10] << 8);
-
+      uint16_t FocussMapped = temp[9] + (temp[10] << 8);
+      if (abs(LastFocusVal - data.ch[2])< 10)
+      {
+        FocussMapped = LastFocusVal;
+      }
+      else
+      {
+        LastFocusVal = FocussMapped;
+      }
+      
       // // Reconstruct the check sum
       uint16_t checksum = temp[11] + (temp[12] << 8) + (temp[13] << 16) + (temp[14] << 24);
 
@@ -205,7 +216,7 @@ void loop()
       }
 
       // print the data
-      ZoomPWMValDesired = data.ch[0];
+      // ZoomPWMValDesired = data.ch[0];
 
       // Serial.println("Packet Received");
       // Serial.println(data.ch[0]);
@@ -214,10 +225,10 @@ void loop()
       if (ZoomPWMValDesired != oldZoomPWMValDesired)
       {
         Serial.print("ZoomPWMValDesired: ");
-        Serial.println(ZoomPWMValDesired);
+        // Serial.println(ZoomPWMValDesired);
 
         Serial.print(" ZoomPWMValDesired: ");
-        Serial.println(ZoomPWMValDesired);
+        // Serial.println(ZoomPWMValDesired);
         if (ZoomPWMValDesired == Zoom12Val ||
             ZoomPWMValDesired == Zoom14Val ||
             ZoomPWMValDesired == Zoom15Val ||
@@ -240,16 +251,16 @@ void loop()
         }
       }
 
-      Serial1.print("START");
-      Serial1.write(data.ch[0] & 0xFF);
-      Serial1.write(data.ch[0] >> 8);
+      // Serial1.print("START");
+      // Serial1.write(data.ch[0] & 0xFF);
+      // Serial1.write(data.ch[0] >> 8);
 
-      Serial1.write(data.ch[1] & 0xFF);
-      Serial1.write(data.ch[1] >> 8);
+      // Serial1.write(data.ch[1] & 0xFF);
+      // Serial1.write(data.ch[1] >> 8);
 
-      Serial1.write(data.ch[2] & 0xFF);
-      Serial1.write(data.ch[2] >> 8);
-      Serial1.print("END");
+      // Serial1.write(data.ch[2] & 0xFF);
+      // Serial1.write(data.ch[2] >> 8);
+      // Serial1.print("END");
 
       // startcount++;
     }
